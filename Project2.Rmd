@@ -122,7 +122,9 @@ country_data = covid_data %>% group_by(Country) %>% na.omit() %>% summarise(Numb
             Resid_change = mean(residential_percent_change_from_baseline))
 
 
-country_data = inner_join(country_data, world_pop, by  = "Country" ) %>% mutate(cases_per_capita_2020 = Number_Cases/pop2021 )
+country_data = inner_join(country_data, world_pop, by  = "Country" ) %>% 
+  mutate(cases_per_capita_2020 = Number_Cases/pop2021,
+         deaths_per_capita_2020 = Number_Deaths/pop2021)
 
 ```
 
