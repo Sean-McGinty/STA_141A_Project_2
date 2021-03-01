@@ -36,6 +36,7 @@ library(tidyverse)
 library(readxl)
 library(data.table)
 library(cowplot)
+library(kableExtra)
 ```
 
 ```{r}
@@ -53,7 +54,6 @@ covidWHO <- read_csv("https://covid19.who.int/WHO-COVID-19-global-data.csv") %>%
 world_pop = read_csv("~/Downloads/csvData.csv") %>% mutate(Country = name)
 ```
 ```{r}
-
 covidmobility
 ```
 
@@ -127,7 +127,23 @@ country_data = inner_join(country_data, world_pop, by  = "Country" ) %>%
          deaths_per_capita_2020 = Number_Deaths/pop2021)
 
 ```
+            Retail_Rec_change 
+            Grocery_Pharm_change
+            Parks_change 
+            Transit_Stations_change 
+            Work_change 
+            Resid_change 
+```{r}
+Model = lm(data = country_data, cases_per_capita_2020 ~ Retail_Rec_change +
+            Grocery_Pharm_change+
+            Parks_change +
+            Transit_Stations_change +
+            Work_change +
+            Resid_change )
+anova(Model)
+summary(Model)
 
+```
 
 
 This data set is maintained by WHO and updated constantly. The first task for you is to understand this data set, e.g., the meaning of the variables and their values. To this end, you can make use of your preferred search engine, or read the documentation for this data set. 
