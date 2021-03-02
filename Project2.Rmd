@@ -199,7 +199,9 @@ The following list provides one potential structure of the data analysis report.
 ***
 
 
-1. Introduce the dataset and the questions of interest. asc
+1. Introduce the dataset and the questions of interest. 
+
+Our primary question of interest is whether the amount of mobility (or mobility index) affects the death count per capita, case mortality rate, and number of cases per capita on a global/country scale. 
 
 2. Review the background of the coronavirus. 
 
