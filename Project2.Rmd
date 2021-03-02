@@ -54,12 +54,27 @@ covidWHO <- read_csv("https://covid19.who.int/WHO-COVID-19-global-data.csv") %>%
 world_pop = read_csv("~/Downloads/csvData.csv") %>% mutate(Country = name)
 ```
 ```{r}
-covidmobility
+covidmobility%>% filter(country_region == "China")
 ```
 
 ```{r}
 covidmobility
-covidWHO
+covidWHO %>% filter(Country == "China")
+```
+
+
+```{r}
+cases_by_country = covidWHO %>%  mutate(Year = substr(Date_reported,1,4),
+                                 Month = substr(Date_reported,6,7))  %>% 
+  na.omit() %>%
+  group_by(Country_code,Country) %>% 
+  summarise(
+        Country_code = unique(Country_code),
+           Country = unique(Country),
+           WHO_region = unique(WHO_region),
+           Cumulative_cases = max(Cumulative_cases),
+           New_deaths = sum(New_deaths),
+           Cumulative_deaths = max(Cumulative_deaths) ) 
 ```
 
 ```{r}
@@ -149,6 +164,8 @@ anova(model1)
 summary(model1)
 
 ```
+
+
 ```{r}
 #deaths per capita vs our six factors of Retail and Recreation, Grocery & Pharmacy, Parks, Transit Stations, Workplaces, and Residential Change
 model2 = lm(data = country_data, deaths_per_capita_2020 ~ Retail_Rec_change +
