@@ -1,12 +1,13 @@
 ---
-title: "Project 2 Description"
+title: "Project 2: COVID Analysis"
 date: "`r Sys.Date()`"
+authors: "Victor Sandoval, Radhika Kulkarni, Brian Lan, Cory Takiguchi, Sean McGinty"
 output:
   html_document:
     code_folding: hide
     collapsed: no
     df_print: paged
-    number_sections: yes
+    number_sections: no
     theme: paper
     toc: yes
     toc_depth: 5
@@ -18,50 +19,77 @@ editor_options:
   chunk_output_type: inline
 ---
 
-## Overview
-
-This document contains instructions on Project 2 for STA 141A in Winter 2021. This document is made with `R markdown`. The `rmd` file to generate this document is available on the course website. 
-
-# Background
-
-
-
-## WHO COVID-19 data
-
-We will do an EDA for the WHO COVID-19 data. You can take a look at the [weekly WHO COVID-19 update](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports) for reference.
-
-
-```{r}
+```{r global_options, include=FALSE,include=FALSE}
+knitr::opts_chunk$set(fig.pos = 'H',warning=FALSE,message=FALSE)
 library(tidyverse)
 library(readxl)
 library(data.table)
 library(cowplot)
 library(kableExtra)
+library(countrycode)
+library(ggrepel)
+library(nlme)
+library(hablar)
+library(plotly)
 ```
+
+***
+
+# Abstract
+
+In this report, we primarily analyze the WHO COVID-19 and Google Mobility Trends datasets. For the Introduction, we introduce our primary and secondary question of interest and introduce our three data sources. Next, we provide a brief overview of the coronavirus and examine certain countries who exhibit strong and weak COVID restrictions. The next section provides summary statistics for each country’s number of cases, number of deaths, and case-mortality rate relative to their date in time. For Inferential Analysis, we built three linear regression models where we regressed number of cases, number of deaths, and case mortality rate on four factors from the Google Mobility Data. After that, we conducted a sensitivity analysis to determine if our models satisfied the assumptions made in our report. Finally, we stated our conclusion and examined our findings for Model 1, Model 2, and Model 3. \
+
+***
+
+# Introduction
+
+In December of 2019, the occurrence of the coronavirus disease was first observed in Wuhan, China. The disease quickly spread throughout the world, contributing to the world wide lockdowns that kept many indoors for months. This spread was exacerbated by the presence of asymptomatic infected persons who accounted for approximately 40% to 45% of those infected (Oran, 2020). Those with symptoms mostly suffered from fever, coughs, fatigue, diarrhea, sore throat, dyspnea, and anosmia with more extreme cases resulting in blood clots, heart attacks, kidney failure, and severe respiratory failure (Larsen, 2020). Those with weakened immune systems or underlying health conditions, such as obesity, diabetes, and hypertension, are more susceptible to the harsher symptoms of the coronavirus and are at higher risk of mortality(Rezende, 2020). \
+
+As an immediate response to the pandemic, scientists sought to create an immediate vaccine for the virus. To further combat the spread and increasing deaths caused by the virus, governments worldwide closed off tourism and changed policies regarding being in public, resulting in limited mobility within each individual country as the majority of populations was indoors and usually went to public places for essential activities. For example, countries like China and the United States put strict nationally mandated directives to limit travel and social and shelter in place policies to close non essential businesses and schools, helping mitigate the spread of the disease. In the observational study by Nouvellet(2021), the amount of COVID-19 transmission following the initial reduction in mobility of 52 countries were analyzed and it was found that transmission decreased significantly at a rate of 73%; however, they also found that after quarantine restrictions eased, the transmission rates went up with the predictive ability of the transmissibility to have decreased. Geographical and socioeconomic factors also account for the differences in the spread of COVID-19 where a reduction in mobility has shown to be more difficult for disadvantaged racial and socioeconomic groups who aren’t able to reduce their mobility as sharply and visit areas associated with higher risk (Chang, 2021). Categories of places in which people are mobile also contribute to the spread of the virus differently as in India where certain places like grocery stores and retail stores associate with the incidence of COVID-19 a lot higher than other areas of mobility (Praharaj, 2020). It can be seen that mobility trends relate to the spread of COVID-19 in a multitude of ways and through analysis, the trend for certain mobility categories of places may help identify whether or not the virus may spread faster or slower at different locations of mobility. \
+
+In this project, we look into the implications of how the mobility of human populations across the globe can influence the number of deaths caused by the COVID-19 virus. In particular, we ask the question “Does the amount of mobility (or mobility index) affect the overall death count/number of cases/capita, number of deaths/capita on a global scale?” We also ask our secondary question of “Which mobility categories have the greatest impact on the overall death count/number of cases/capita and number of deaths/capita for overall countries?” We ask these questions as we would like to see how mobility in different places can influence the spread of COVID-19. As people access the different mobility category places through different manners at different rates, there can potentially be different patterns of infection that causes COVID-19 cases and even deaths. We believe that by analyzing the relationship between mobility categories and COVID-19 deaths, we can figure out which mobility category can potentially affect the spread of the virus the most and ultimately we can utilize this data to help with government policies to limit the spread of COVID-19 by reducing the access of these locations. We define mobility categories as six categories that people have access to before and after the spread to COVID-19. These categories are defined by the Google COVID-19 Community Mobility Reports dataset as Grocery and Pharmacy, Parks, Transit Stations, Retail and Recreation, Residential, and Workplaces. To address our question of interest, we will be using this dataset to quantify our amount of mobility and we will also use the WHO COVID-19 dataset to quantify the amount of deaths which can generate cases per capita and deaths per capita when added to the World Bank Dataset for global population sizes. We will be looking at the 175 countries contained in the 3 datasets. We will be using months as our unit of measurement to standardize the data for Google Mobility and WHO COVID-19 to control for the rate of spread for one’s initial infection, the incubation period and potentially one with asymptomatic symptoms. As the incubation period can be up to 3 weeks, we believe that using monthly data will help us control for these variables(Badr, 2020). The data for our analysis will start from the beginning of January and end at the end of February. Through our analysis, we can then see whether the amount of mobility has an affect on the spread of COVID-19 which will be indicated through death count/ capita and death count/number of cases/capita. \
+
+***
+
+# Background 
+
+The coronavirus pandemic has ravaged the globe for almost a full year. Scientists point towards late 2019, when the virus, later labeled as SARS-CoV-2, was discovered in Wuhan China. Since then, countries have independently responded to the outbreak. Many countries immediately enacted strict travel and lockdown orders, while others enforced measures slowly over time. To this day, countries still have different responses to the novel virus. \
+
+Argentina is a country who immediately responded the coronavirus outbreak. On March 20th, the nation, was already under intense financial distress, went into a lockdown. This lockdown required home quarantining, shutting down businesses and schools, and restricting travel in and out of the country. The lockdown’s strict enforcement was met with violence from the police, who were given authority to stop and question anyone they found roaming the streets. Argentina ended their official lockdown on November 6th, but still remain one of the strictest countries in terms COVID prevention measures. \
+
+
+Afghanistan is another country who minimally responded to COVID concerns. According to a 2020 New York Times Article titled “Covid Can’t Compete…,” many Afghans believe COVID is a hoax and “a lie told by the government.” With Afghanistan mainly concerned with war and killings within their borders, their local news outlets sparingly mention the coronavirus outbreak. The overall fear amongst the country is that COVID is nothing more than the regular flu. Afghanistan’s government slowly implemented city lockdowns. Now, prevention measures such as wearing masks and social distancing continue to be followed haphazardly. Afghans continue to “cram into buses, each shoulder to shoulder indoors in restaurants, and cluster together in sprawling bazaars.” These are explanations for why an estimated 32% of Afghanistan’s population have contracted COVID. \
+
+
+For this project, we examined different variables from Google’s Mobility Dataset. Google provides data for the changes in people’s travel since the start of COVID.  The dataset records country-wide data on the different reasons for people leaving their homes. We primarily focused on the following three reasons: Grocery and Pharmacy, Parks, and Retail and Recreation. The database lists the percentage changes for each country in relation to their baseline value. The baseline value is essentially the normal value for that day of the week taken from the median of a 5-week period. Essentially, if a country exhibits a negative percentage, that means LESS individuals went out to that particular location compared to their 5-week expected value. Likewise, a positive percentage indicates individuals went out MORE than their 5-week expected value.  \
+
+In addition to Google’s Mobility dataset, we also examined the World Health Organization’s COVID-19 dataset. WHO records cases and deaths for countries across the globe, spanning daily from 1/3/20 to 3/3/21. Relevant variables captured in this dataset include: “Date_reported”, “Country”, “New_cases”, “Cumulative_cases”, “New_deaths”, and “Cumulative_deaths.” Cumulative cases and cumulative deaths represent the sum of all previous and new cases or deaths to that specific point in time. In addition, we created a new variable “case_mortality_rate” which represents the proportion of individuals who die after contracting COVID. \
+
+Finally, we merged Google’s Mobility data with the WHO COVID-19 data. We also added “The World Bank” dataset on 2020 population size for each country. By doing so, we were able to generate new variables such as “cases_per_capita” and “death_per_capita.” Cases per capita was a useful variable because it allowed us to examine how severe the number of cases were relative to other countries.  \
+
+***
+
+# Descriptive analysis 
+
 
 ```{r}
-covidmobility <- read_csv("~/Downloads/Global_Mobility_Report.csv") %>% filter(is.na(sub_region_1)) %>% mutate(Date_reported = as.Date(date), Country_code = country_region_code) %>% select(-c("sub_region_1",
-"sub_region_2",
-"metro_area",
-"iso_3166_2_code",
-"census_fips_code"))
+covidmobility <- read_csv("~/Downloads/Global_Mobility_Report.csv") %>%
+	filter(is.na(sub_region_1)) %>%
+	mutate(Date_reported = as.Date(date), Country_code = country_region_code) %>%
+	select(-c("sub_region_1",
+            "sub_region_2",
+            "metro_area",
+            "iso_3166_2_code",
+            "census_fips_code"))
 
+covidWHO <- read_csv("https://covid19.who.int/WHO-COVID-19-global-data.csv") %>%
+	mutate(Date_reported = as.Date(Date_reported))
 
-
-
-covidWHO <- read_csv("https://covid19.who.int/WHO-COVID-19-global-data.csv") %>%  mutate(Date_reported = as.Date(Date_reported))
-
-world_pop = read_csv("~/Downloads/csvData.csv") %>% mutate(Country = name)
-```
-```{r}
-covidmobility%>% filter(country_region == "China")
-```
-
-```{r}
-covidmobility
-covidWHO %>% filter(Country == "China")
+world_pop = read_csv("~/Downloads/csvData.csv") %>%
+	mutate(Country = name)
 ```
 
+## Cases by Country Data
 
 ```{r}
 cases_by_country = covidWHO %>%  mutate(Year = substr(Date_reported,1,4),
@@ -73,8 +101,14 @@ cases_by_country = covidWHO %>%  mutate(Year = substr(Date_reported,1,4),
            Country = unique(Country),
            WHO_region = unique(WHO_region),
            Cumulative_cases = max(Cumulative_cases),
-           New_deaths = sum(New_deaths),
-           Cumulative_deaths = max(Cumulative_deaths) ) 
+           Cumulative_deaths = max(Cumulative_deaths),
+           case_mortality_rate = Cumulative_deaths/Cumulative_cases) %>%
+  mutate("Continent" = countrycode(Country,"country.name","continent") ) %>%
+  inner_join(world_pop, by  = "Country" ) %>% 
+  mutate(cases_per_capita_2020 = Cumulative_cases/pop2020,
+         deaths_per_capita_2020 = Cumulative_deaths/pop2020)
+
+cases_by_country
 ```
 
 ```{r}
@@ -96,8 +130,26 @@ covid_data = inner_join(covidmobility,covidWHO,by = c("Country_code","Date_repor
            "Cumulative_deaths")) %>%
   mutate(Year = substr(Date_reported,1,4),
          Month = substr(Date_reported,6,7)) 
+```
+
+## Summary Statistics by Country
+
+```{r}
+country_data = covid_data %>% group_by(Country) %>% na.omit() %>% dplyr::summarise(Number_Cases = max(Cumulative_cases),
+            Number_Deaths = max(Cumulative_deaths),
+            case_mortality_rate = Number_Deaths/Number_Cases,
+            Retail_Rec_change = mean(retail_and_recreation_percent_change_from_baseline),
+            Grocery_Pharm_change = mean(grocery_and_pharmacy_percent_change_from_baseline),
+            Parks_change = mean(parks_percent_change_from_baseline),
+            Transit_Stations_change = mean(transit_stations_percent_change_from_baseline),
+            Work_change = mean(workplaces_percent_change_from_baseline),
+            Resid_change = mean(residential_percent_change_from_baseline))
 
 
+country_data = inner_join(country_data, world_pop, by  = "Country" ) %>% 
+  mutate(cases_per_capita_2020 = Number_Cases/pop2021,
+         deaths_per_capita_2020 = Number_Deaths/pop2021)
+country_data
 ```
 
 
@@ -120,38 +172,332 @@ covid_month_data_20 = covid_data %>%
            Cumulative_cases = max(Cumulative_cases),
            New_deaths = sum(New_deaths),
            Cumulative_deaths = max(Cumulative_deaths) ) 
-```
-```{r}
-#covid_data %>% filter(Month %in% c("01","02","03"), Country == "United Arab Emirates",Year == "2020") %>% select(Date_reported,New_cases,Cumulative_cases,New_deaths,Cumulative_deaths)
+#covid_month_data_20
 ```
 
 ```{r}
-country_data = covid_data %>% group_by(Country) %>% na.omit() %>% summarise(Number_Cases = max(Cumulative_cases),
-            Number_Deaths = max(Cumulative_deaths),
-            case_mortality_rate = Number_Deaths/Number_Cases,
-            Retail_Rec_change = mean(retail_and_recreation_percent_change_from_baseline),
-            Grocery_Pharm_change = mean(grocery_and_pharmacy_percent_change_from_baseline),
-            Parks_change = mean(parks_percent_change_from_baseline),
-            Transit_Stations_change = mean(transit_stations_percent_change_from_baseline),
-            Work_change = mean(workplaces_percent_change_from_baseline),
-            Resid_change = mean(residential_percent_change_from_baseline))
+covid_month_data_20<- covid_month_data_20 %>% filter(Year == "2020")
+#head(covid_month_data_20)
+
+cd <- covid_month_data_20 %>% select(Country, Month, Country_code,
+									 Cumulative_deaths, Cumulative_cases, New_cases, New_deaths,
+									 ret = retail_and_recreation_percent_change_from_baseline, 
+									 gro = grocery_and_pharmacy_percent_change_from_baseline,
+									 par = parks_percent_change_from_baseline, 
+									 tra = transit_stations_percent_change_from_baseline, 
+									 wor = workplaces_percent_change_from_baseline, 
+									 res = residential_percent_change_from_baseline
+									 )
+cd["Country_code"] <-	countrycode(cd$Country_code, "iso2c", "iso3c")
+cdt <- cd %>% convert(num(Month))
+```
 
 
-country_data = inner_join(country_data, world_pop, by  = "Country" ) %>% 
-  mutate(cases_per_capita_2020 = Number_Cases/pop2021,
-         deaths_per_capita_2020 = Number_Deaths/pop2021)
+
+## Continent Sums
+
+```{r}
+continent_sum = function(variable_of_interest,abbreviation,x_axis_label,graph_type = "boxplot"){
+
+sum_stats = c("Avg" ,"SD"  , "Min" , "Q1"  , "Med" , "Q3"  ,"Max" )
+column_sum_headers = paste(sum_stats,"_",abbreviation,sep="")
+
+mortality_rate_sum = cases_by_country %>%
+	group_by(Continent) %>%     #grouping by class type
+  na.omit() %>%
+	summarise(      Avg   = mean(get(variable_of_interest)),         #mean
+						      SD    = sd(get(variable_of_interest)),           #standard deviation
+					      	Min   = min(get(variable_of_interest)),          #min
+					        Q1    = quantile(get(variable_of_interest),.25), #quartile 1
+					      	Med   = median(get(variable_of_interest)),       #median
+					        Q3    = quantile(get(variable_of_interest),.75), #quartile 3
+					       	Max   = max(get(variable_of_interest)))          #Max
+
+names(mortality_rate_sum) = c("Continent",column_sum_headers)
+graph = cases_by_country %>% filter(!is.na(Continent)) %>%
+  ggplot( aes(x=get(variable_of_interest),fill = Continent)) +
+	#geom_boxplot(position = "identity") + #density plot
+	labs(fill = "Continent") + #color based on class type
+	xlab(x_axis_label) + #x axis label
+	ylab("Density") + #y axis label
+	facet_grid(Continent~.) + #putting each class type in a different graph
+	ggtitle(paste(x_axis_label, "by Global Continent")) + #adding average of each plot
+	theme(plot.title = element_text(face = "bold",
+																	hjust = .5)
+	       #axis.text.y = element_blank()
+       )
+if(graph_type == "density"){
+  print(graph + geom_density(position = "identity") + 
+          geom_vline(data = mortality_rate_sum, aes(xintercept = get(paste(column_sum_headers[1]))), linetype = "dashed",col = "Black") ) }
+else{ print(graph + geom_boxplot(position = "identity"))
+  }
+return(as_data_frame(mortality_rate_sum) %>% kbl() %>%
+  kable_minimal())
+}
+```
+
+This shows the Case Mortality Rate in terms of five continents: Africa, Americas, Asia, Europe, and Oceania. It appears that all five continents have relatively similar Case Mortality Rates, with Africa exhibiting the largest and Oceania showing the smallest. The graphs show that skewness exists in the data. For example, Asia appears to be right skewed, meaning that their average case mortality rate is greater than their median case mortality rate. Grouping by continents, however, is not necessarily a good way to evaluate Case Mortality Rate. Aggregating all the countries together into one continent is not accurate because each country has their own COVID restrictions. For example, The United States of America and Argentina have very different COVID policies, but are grouped together as one continent. \
+
+```{r}
+#variable_of_interest = "case_mortality_rate", abbreviation = "mr" ,x_axis_label = "Case Mortality Rate"
+
+continent_sum("case_mortality_rate", "mr" ,"Case Mortality Rate","density")
+#continent_sum("Cumulative_cases", "cc" ,"Cumulative Cases")
+#continent_sum("Cumulative_deaths", "cd" ,"Cumulative Deaths")
+#continent_sum("cases_per_capita_2020", "cpc" ,"Cases Per Capita")
+#continent_sum("deaths_per_capita_2020", "dpc" ,"Deaths Per Capita")
+```
+
+
+## Descriptive Analysis: Mobility Data Spread for Countries
+
+This graph plots the relationship between Retail Change Mobility and Case Mortality Rate. Retail Change Mobility represents changes in people going out to retail locations which include malls and department stores. Some countries, such as Afghanistan and Papa New Guinea, exibit positive changes in mobility despite COVID-19. This could be an indication that their governments have imposed loose COVID restrictions. Other countries, such as Peru and Argentina, show large decreases in Mobility. This could be an indication that their governments have imposed strict COVID restrictions. \
+\
+```{r}
+ggplot(data=country_data, mapping=aes(x=Retail_Rec_change, y=case_mortality_rate)) +
+  geom_point(outlier.shape=NA, color='black', size =0.75)+
+  ylim(0,0.1)+
+  xlab("Mobility (Retail Change)")+
+  ylab("Case Mortality Rate")+
+  ggtitle("Case Mortality vs Mobility (Retail Change)")+
+  geom_label_repel(aes(label=ifelse( Retail_Rec_change >5 | Retail_Rec_change < -50 , as.character(Country),'')),
+                   box.padding   = 1.5, 
+                  point.padding = 0.5,
+                  segment.color = 'red') +
+  theme_classic()
+```
+
+
+This graph plots the relationship between Grocery Store Change Mobility and Case Mortality Rate. Grocery Store Change Mobility represents changes in people going out to supermarkets for food shopping. Some countries, such as Afghanistan and Mongolia, exibit positive changes in mobility despite COVID-19. This could be an indication that their governments have imposed loose COVID restrictions. Other countries, such as Panama, show large decreases in Mobility. This could be an indication that their governments have imposed strict COVID restrictions. \
+\
+```{r}
+ggplot(data=country_data, mapping=aes(x=Grocery_Pharm_change, y= case_mortality_rate)) +
+  geom_point(outlier.shape=NA, color='black', size =0.75)+
+  ylim(0,0.1)+
+  xlab("Mobility (Grocery Store Change)")+
+  ylab("Case Mortality Rate")+
+  ggtitle("Case Mortality vs Mobility (Grocery Store Change)")+
+  geom_label_repel(aes(label=ifelse( Grocery_Pharm_change >20 | Grocery_Pharm_change < -25 , as.character(Country),'')),
+                   box.padding   = 3, 
+                  point.padding = 0.5,
+                  segment.color = 'red') +
+  theme_classic()
+
 
 ```
-            Retail_Rec_change 
-            Grocery_Pharm_change
-            Parks_change 
-            Transit_Stations_change 
-            Work_change 
-            Resid_change 
-            
-            
-            
-In order to investigate which of our mobility factors is most significant depending on the response variables of cases per capita, number of deaths per capita, and case mortality, we will construct three regression models. 
+
+
+This graph plots the relationship between Park Change Mobility and Case Mortality Rate. Park Change Mobility represents changes in people going out to outdoor locations such as National Parks. Some countries, such as Denmark, exibit positive changes in mobility despite COVID-19. This could be an indication that their governments have imposed loose COVID restrictions. Other countries, such as Argentina, show large decreases in Mobility. This could be an indication that their governments have imposed strict COVID restrictions. \
+\
+\
+```{r}
+ggplot(data=country_data, mapping=aes(x=Parks_change, y=case_mortality_rate)) +
+  geom_point(outlier.shape=NA, color='black', size =0.75)+
+  ylim(0,0.1)+
+  xlab("Mobility (Parks Change)")+
+  ylab("Case Mortality Rate")+
+  ggtitle("Case Mortality vs Mobility (Parks Change)")+
+  geom_label_repel(aes(label=ifelse( Parks_change >50 | Parks_change < -50 , as.character(Country),'')),
+                   box.padding   = 1.5, 
+                  point.padding = 0.5,
+                  segment.color = 'red') +
+  theme_classic()
+
+```
+
+## Mapping Global Case Data
+
+### Map of Cumulative Deaths Over Time
+
+```{r}
+{
+
+l <- list(color = toRGB("black"), width = 0.7)
+g <- list(showframe = T,showland=T, landcolor="white", showcoastlines = T,bgcolor = "lightsteelblue1", showocean=T, oceancolor="aliceblue",
+		  projection = list(type = "natural earth"))
+tm <- cdt %>% plot_geo(locationmode = "ISO-3", frame = ~Month) 
+tm <- tm %>% add_trace(locations=~Country_code, 
+			  color = ~Cumulative_deaths, 
+			  z = ~Cumulative_deaths,
+			  colors = "Blues",
+			  marker = list(line = l),
+			  text = ~Country) %>% 
+	colorbar(title = "Cumulative Deaths", limits = c(0, 400000)) %>% 
+	layout(title = "Cumulative Deaths by Country per Month <br> (Hover for details)", geo = g)
+tm}
+```
+
+### Map of New Cases Over Time
+
+```{r}
+{
+l <- list(color = toRGB("black"), width = 0.7)
+g <- list(showframe = T,showland=T, landcolor="white", showcoastlines = T,bgcolor = "lightsteelblue1", showocean=T, oceancolor="aliceblue",
+		  projection = list(type = "natural earth"))
+tm <- cdt %>% plot_geo(locationmode = "ISO-3", frame = ~Month) 
+tm <- tm %>% add_trace(locations=~Country_code, 
+			  color = ~New_cases, 
+			  z = ~New_cases,
+			  colors = "Blues",
+			  marker = list(line = l),
+			  text = ~Country) %>% 
+	colorbar(title = "New Cases", limits = c(0, 14000000)) %>% 
+	layout(title = "New Cases by Country per Month <br>(Hover for details)", geo = g)
+tm}
+```
+
+### Map of Retail Mobility Change
+
+```{r}
+{
+l <- list(color = toRGB("black"), width = 0.7)
+g <- list(showframe = T,showland=T, landcolor="white", showcoastlines = T,bgcolor = "lightsteelblue1", showocean=T, oceancolor="aliceblue",
+		  projection = list(type = "natural earth"))
+tm <- cdt %>% plot_geo(locationmode = "ISO-3", frame = ~Month) 
+tm <- tm %>% add_trace(locations=~Country_code, 
+			  color = ~ret, 
+			  z = ~ret,
+			  colorscale = list(c(0, "rgb(255, 0, 0)"), list(0.5, "rgb(255, 255, 255)"), list(1, "rgb(0, 0, 255)")),
+			  marker = list(line = l),
+			  text = ~Country) %>% 
+	colorbar(title = "Mobility Change", limits = c(-100, 100)) %>% 
+	layout(title = "Retail and Recreation Mobility Change <br>(Hover for details)", geo = g)
+tm
+}
+```
+
+### Map of Groceries Mobility Change
+
+```{r}
+{
+
+l <- list(color = toRGB("black"), width = 0.7)
+g <- list(showframe = T,showland=T, landcolor="white", showcoastlines = T,bgcolor = "lightsteelblue1", showocean=T, oceancolor="aliceblue",
+		  projection = list(type = "natural earth"))
+tm <- cdt %>% plot_geo(locationmode = "ISO-3", frame = ~Month) 
+tm <- tm %>% add_trace(locations=~Country_code, 
+			  color = ~gro, 
+			  z = ~gro,
+			  colorscale = list(c(0, "rgb(255, 0, 0)"), list(0.5, "rgb(255, 255, 255)"), list(1, "rgb(0, 0, 255)")),
+			  marker = list(line = l),
+			  text = ~Country) %>% 
+	colorbar(title = "Mobility Change", limits = c(-100, 100)) %>% 
+	layout(title = "Groceries and Pharmacy Mobility Change <br>(Hover for details)", geo = g)
+tm}
+```
+
+### Map of Parks Mobility Change
+
+```{r}
+{
+
+l <- list(color = toRGB("black"), width = 0.7)
+g <- list(showframe = T,showland=T, landcolor="white", showcoastlines = T,bgcolor = "lightsteelblue1", showocean=T, oceancolor="aliceblue",
+		  projection = list(type = "natural earth"))
+tm <- cdt %>% plot_geo(locationmode = "ISO-3", frame = ~Month) 
+tm <- tm %>% add_trace(locations=~Country_code, 
+			  color = ~par, 
+			  z = ~par,
+			  colorscale = list(c(0, "rgb(255, 0, 0)"), list(0.5, "rgb(255, 255, 255)"), list(1, "rgb(0, 0, 255)")),
+			  marker = list(line = l),
+			  text = ~Country) %>% 
+colorbar(title = "Mobility Change", limits = c(-100, 100)) %>% 
+	layout(title = "Parks Mobility Change <br>(Hover for details)", geo = g)
+tm
+}
+```
+
+### Map of Transit Stations Mobility Change
+
+```{r}
+
+{
+l <- list(color = toRGB("black"), width = 0.7)
+g <- list(showframe = T,showland=T, landcolor="white", showcoastlines = T,bgcolor = "lightsteelblue1", showocean=T, oceancolor="aliceblue",
+		  projection = list(type = "natural earth"))
+tm <- cdt %>% plot_geo(locationmode = "ISO-3", frame = ~Month) 
+tm <- tm %>% add_trace(locations=~Country_code, 
+			  color = ~tra, 
+			  z = ~tra,
+			  colorscale = list(c(0, "rgb(255, 0, 0)"), list(0.5, "rgb(255, 255, 255)"), list(1, "rgb(0, 0, 255)")),
+			  marker = list(line = l),
+			  text = ~Country) %>% 
+	colorbar(title = "Mobility Change", limits = c(-100, 100)) %>% 
+	layout(title = "Transit Stations Mobility Change <br>(Hover for details)", geo = g)
+tm
+}
+```
+
+### Map of Workplace Mobility Change
+
+```{r}
+
+{
+l <- list(color = toRGB("black"), width = 0.7)
+g <- list(showframe = T,showland=T, landcolor="white", showcoastlines = T,bgcolor = "lightsteelblue1", showocean=T, oceancolor="aliceblue",
+		  projection = list(type = "natural earth"))
+tm <- cdt %>% plot_geo(locationmode = "ISO-3", frame = ~Month) 
+tm <- tm %>% add_trace(locations=~Country_code, 
+			  color = ~wor, 
+			  z = ~wor,
+			  colorscale = list(c(0, "rgb(255, 0, 0)"), list(0.5, "rgb(255, 255, 255)"), list(1, "rgb(0, 0, 255)")),
+			  marker = list(line = l),
+			  text = ~Country) %>% 
+	colorbar(title = "Mobility Change", limits = c(-100, 100)) %>% 
+	layout(title = "Workplace Mobility Change <br>(Hover for details)", geo = g)
+tm
+}
+```
+
+### Map of Residential Mobility Change
+
+```{r}
+
+{
+l <- list(color = toRGB("black"), width = 0.7)
+g <- list(showframe = T,showland=T, landcolor="white", showcoastlines = T,bgcolor = "lightsteelblue1", showocean=T, oceancolor="aliceblue",
+		  projection = list(type = "natural earth"))
+tm <- cdt %>% plot_geo(locationmode = "ISO-3", frame = ~Month) 
+tm <- tm %>% add_trace(locations=~Country_code, 
+			  color = ~res, 
+			  z = ~res,
+			  colorscale = list(c(0, "rgb(255, 0, 0)"), list(0.5, "rgb(255, 255, 255)"), list(1, "rgb(0, 0, 255)")),
+			  marker = list(line = l),
+			  text = ~Country) %>% 
+	colorbar(title = "Mobility Change", limits = c(-100, 100)) %>% 
+	layout(title = "Residential Mobility Change <br>(Hover for details)", geo = g)
+tm
+}
+```
+
+***
+
+# Inferential analysis
+
+**Independent/Explanatory Variables**: \
+**X_1**: Retail recreation Change \
+**X_2**: Grocery and Pharmacy Change \
+**X_3**: Parks Change \
+**X_4**: Transit Stations Change \
+**X_5**: Work Change \
+**X_6**: Residential Change \
+
+**Regression Assumptions**: \
+(1) Regression function is linear \
+(2) The $\epsilon's$ do have constant variance. \
+(3) The $\epsilon's$ are independent and identically distributed. \
+(4) The model fits all observations. \
+(5) The $\epsilon's$ are  normally distributed. \
+
+We would like to test whether type of mobility has an effect on the number of cases per capita, number of deaths per capita, and the case mortality rate for all the countries with data available. We will do that using a multiple regression test: \
+
+## Model 1: Predicting Cases Per Capita
+
+***Model***: $Y1_i= \beta_0 + \beta_1X_1+ \beta_2X_2 + \beta_3X_3 + \beta_4X_4 +  \beta_5X_5 + \beta_6X_6 + \epsilon_i$
+where the index i represents each country, and $X_j$ , $j = 1, ..., 6$ are the predictor variables of the mobility data (Grocery and Pharmacy, Retail and Recreation, Parks, Residential, Transit stations, and Workplaces), and  $\beta_0 , \beta_1, \beta_2 , \beta_3 , \beta_4 ,  \beta_5 , \beta_6$ are the regression coefficients for the mobility data for each country. $\epsilon_i$ are the errors for each country that the model can’t explain. $Y_i$ are the number of cases per capita for each country i (number of cases per capita is the first of the three response variables, thus denoted by $Y1_i$/). The constraints on the parameters are sum-to-zero.  The residuals for the model should also sum to zero. We will also test for interaction effects between the predictor variables, as we suspect that the transmissibility of COVID-19 is not limited to just one high risk predictor variable but likely may involve more than one. \
+
+The predictor variables of Retail and Recreation, Grocery and Pharmacy, and Parks are the most significant out of the six total variables. Because our p-values of 1.236 x 10^-8, 0.008123, 9.601 x 10^-9 < all common values of $\alpha$, we reject the null hypothesis. We conclude that at least one of the regression coefficients are not equal, so the mobility data of Retail and Recreation, Grocery and Pharmacy, and Parks make a difference in the number of cases per capita for the countries overall. Additionally, the R^2 is not as large as we would like, 0.4479, which means that the six predictor variables only explain 44.79% of the variance in the response variable number of COVID 19 cases per capita. Thus we should refit our model first with just the three factors of Retail and Recreation, Grocery and Pharmacy, and Parks and then see if there are any additional interaction effects. \
+
 ```{r}
 #cases per capita vs our six factors of Retail and Recreation, Grocery & Pharmacy, Parks, Transit Stations, Workplaces, and Residential Change
 model1 = lm(data = country_data, cases_per_capita_2020 ~ Retail_Rec_change +
@@ -162,9 +508,14 @@ model1 = lm(data = country_data, cases_per_capita_2020 ~ Retail_Rec_change +
             Resid_change )
 anova(model1)
 summary(model1)
-
 ```
 
+## Model 2: Predicting Deaths Per Capita
+
+**Model**:$Y2_i= \beta_0 + \beta_1X_1+\beta_2X_2 + \beta_3X_3 + β_4X_4 +  \beta_5X_5 + \beta_6X_6 + ϵi$
+where the index i represents each country, and $X_j , j = 1, ..., 6$ are the predictor variables of the mobility data (Grocery and Pharmacy, Retail and Recreation, Parks, Residential, Transit stations, and Workplaces), and  $β_0, β_1, β_2, β_3, β_4, β_5, β_6$ are the regression coefficients for the mobility data for each country. ϵi are the errors for each country that the model can’t explain. $Y2_i$ are the number of deaths per capita for each country i (number of deaths per capita is the second of the three response variables, thus denoted by Y2_i). The constraints on the parameters are sum-to-zero.  The residuals for the model should also sum to zero. We will also test for interaction effects between the predictor variables. \
+
+The predictor variables of Retail and Recreation, Grocery and Pharmacy, and Parks are the most significant out of the six total variables. Because our p-values of 1.063 x 10^-8, 0.02678, 4.826 x 10^-8 < $\alpha = 0.05$, we reject the null hypothesis. We conclude that at least one of the regression coefficients are not equal, so the mobility data of Retail and Recreation, Grocery and Pharmacy, and Parks make a difference in the number of COVID 19 related deaths per capita for the countries overall. Additionally, the R^2 is not as large as we would like, 0.4479, which means that the six predictor variables only explain 44.79% of the variance in the response variable number of COVID 19 related deaths per capita. Thus we should refit our model first with just the three factors of Retail and Recreation, Grocery and Pharmacy, and Parks and then see if there are any additional interaction effects. Additionally, the R^2 value of 0.4284 means that the six predictor variables explain only 42.84% of the variance in the response variable, the number of COVID-19 related deaths per capita. The amount of variance explained should ideally be above 80 percent to make better inferences so it would be in our best interest to refit the model with the significant variables and determine whether interaction effects are necessary.\
 
 ```{r}
 #deaths per capita vs our six factors of Retail and Recreation, Grocery & Pharmacy, Parks, Transit Stations, Workplaces, and Residential Change
@@ -181,7 +532,12 @@ summary(model2)
 ```
 
 
+## Model 3: Predicting Case Mortality Rate
 
+**Model**:$Y3_i= \beta_0 + \beta_1X_1+\beta_2X_2 + \beta_3X_3 + \beta_4X_4 +  \beta_5X_5 + \beta_6X_6 + \epsilon_i$ \
+Where the index i represents each country, and $X_j , j = 1, ..., 6$ are the predictor variables of the mobility data (Grocery and Pharmacy, Retail and Recreation, Parks, Residential, Transit stations, and Workplaces), and  $\beta_0, \beta_1, \beta_2, \beta_3,\beta_4, \beta_5,\beta_6$ are the regression coefficients for the mobility data for each country. $\epsilon_i$ are the errors for each country that the model can’t explain. $Y3_i$ are the case mortality rates for each country i (case mortality rates is the third of the three response variables, thus denoted by $Y3_i$). The constraints on the parameters are sum-to-zero.  The residuals for the model should also sum to zero. We will also test for interaction effects between the predictor variables. \
+
+From the p-values in the table, we can see that none of our mobility data predictor variables are significant. Because our p-values > $\alpha = 0.05$, we fail to reject the null hypothesis. We conclude that there is no difference between the regression coefficients, so the mobility data of six predictor variables do not make a difference in the case mortality rate for the countries overall. Additionally, the R^2 value is very small, 0.04591, which means that the current model has the six predictor variables explain ~ 4.6% of the variability in the response variable, case mortality rate. Given this information, it seems likely that the case mortality rate is not significantly affected by the mobility data. However, it may just be the case that the relationship between the predictor variables and the case mortality rate is nonlinear. \
 ```{r}
 #case mortality rate vs our six factors of Retail and Recreation, Grocery & Pharmacy, Parks, Transit Stations, Workplaces, and Residential Change
 model3 = lm(data = country_data, case_mortality_rate ~ Retail_Rec_change +
@@ -192,74 +548,153 @@ model3 = lm(data = country_data, case_mortality_rate ~ Retail_Rec_change +
             Resid_change )
 anova(model3)
 summary(model3)
-
-
 ```
-This data set is maintained by WHO and updated constantly. The first task for you is to understand this data set, e.g., the meaning of the variables and their values. To this end, you can make use of your preferred search engine, or read the documentation for this data set. 
 
-In this project, you are a team of conscientious statisticians, who wish to help the general public understand the ongoing pandemic. 
+## Interactions Effects
 
+Our secondary question of interest is which predictor variables are associated with the largest case mortality rate, the most number of cases per capita, and the most number of deaths per capita. From our p-values for models 1 and 2, we found that Retail and Recreation, Grocery and Pharmacy, and Parks are associated with the most number of cases per capita and most number of deaths per capita. However, since none of the six predictor variables had significant p-values or R^2 value, we cannot say that there is a predictor variable that is associated with the largest case mortality rate. Therefore we do not test for interaction effects for the third model. \
+\
+To determine the best fit, we will take the three predictor variables that have significant p-values for models 1 and 2: Retail and Recreation, Grocery and Pharmacy, and Parks. For model 3 we will look at different interaction effects to determine if any of the prediction variables in combination explain more of the variation in the response variable case mortality rate. \
 
+### Model 1 with Interaction Effects
 
-## Suggested outline 
+**Model**:$Y1_i= \beta_0 + \beta_1*X_1+ \beta_2*X_2 + \beta_3 *X_3 + \beta_4 *X_1*X_2 + \beta_5*X_1*X_3 + \beta_6*X_2*X_3 + \epsilon_i$, where the index i represents each country, and $ X_j, j = 1,2,3$ are the significant predictor variables of the mobility data (Grocery and Pharmacy, Retail and Recreation, and Parks), and  $\beta_0, \beta_1, \beta_2, \beta_3,\beta_4, \beta_5,\beta_6$ are the regression coefficients for the mobility data for each country. $\beta_4 *X_1*X_2 + \beta_5*X_1*X_3 + \beta_6*X_2*X_3$ are the interaction effects between the three chosen predictor variables. $ \epsilon_i$ are the errors for each country that the model can’t explain. $Y1_i$ are the number of cases per capita for each country i (number of cases per capita is the first of the three response variables, thus denoted by $Y1_i$). The constraints on the parameters are sum-to-zero.  The residuals for the model should also sum to zero. \
 
-The following list provides one potential structure of the data analysis report. As this is the final project, the following suggestions are intended to provide one viable route for your project while leaving you as much freedom as possible. 
+From our new model for the number of cases per capita we can see that the $R^2$ correlation coefficient is not that much larger than that of our original model, even with the interaction effects. This may mean that for the number of cases per capita the interaction between the three significant variables does not explain much more of its variation. \
 
-***
+```{r}
+#REFITTED MODEL 1 WITH INTERACTION EFFECTS
+#cases per capita vs our three factors of Retail and Recreation, Grocery & Pharmacy, and Parks
+refit_model1 = lm(data = country_data, cases_per_capita_2020 ~ Retail_Rec_change +
+            Grocery_Pharm_change+
+            Parks_change+ Grocery_Pharm_change:Parks_change + Grocery_Pharm_change:Retail_Rec_change + Parks_change:Retail_Rec_change+Grocery_Pharm_change:Parks_change:Retail_Rec_change )
+anova(refit_model1)
+summary(refit_model1)
+```
 
-0. Before writing your analysis report, you may want to explore this data set and read about the coronavirus to generate the hypothesis or question to be answered in this report, i.e., the question(s) of interest. You can be creative on this question so long as it meets three conditions.
+### Model 2 with Interaction Effects
 
-    a. This question might be meaningful in real-world. 
-    b. A method discussed in this course is employed in solving this question. 
-    c. This question does not ask for causality.  
+$Y2_i= \beta_0 + \beta_1*X_1+ \beta_2*X_2 + \beta_3 *X_3 + \beta_4 *X_1*X_2 + \beta_5*X_1*X_3 + \beta_6*X_2*X_3 + \epsilon_i$, where the index i represents each country, and X_j, j = 1,2,3 are the significant predictor variables of the mobility data (Grocery and Pharmacy, Retail and Recreation, and Parks), and  $\beta_0, \beta_1, \beta_2, \beta_3,\beta_4, \beta_5,\beta_6$ are the regression coefficients for the mobility data for each country. $ \epsilon_i$ are the errors for each country that the model can’t explain. $Y2_i $are the number of deaths per capita for each country i (number of deaths per capita is the second of the three response variables, thus denoted by $Y2_i$). The constraints on the parameters are sum-to-zero.  The residuals for the model should also sum to zero. \
 
-***
-
-
-1. Introduce the dataset and the questions of interest. 
-
-Our primary question of interest is whether the amount of mobility (or mobility index) affects the death count per capita, case mortality rate, and number of cases per capita on a global/country scale. 
-
-2. Review the background of the coronavirus. 
-
-3. Explore this dataset and generate summary statistics that you find informative, and explain your findings. <span style="color:red"> The summary statistics should include at least time, number of cases, number of death, case-mortality rate.</span>
-
-4.  Propose an appropriate model to answer the questions of interest. 
-      a. Explain your notations. 
-      b. State assumptions for your model. 
-      c. Explain why your model is appropriate for this task. 
-
-
-5.  Fit the proposed model in (4) and explain your results. 
-
-6.  Conduct model diagnostics and/or sensitivity analysis. 
-
-7. Conclude your analysis with a discussion of your findings and caveats of your approach. 
-
-
-***
-
-# Abstract
-
-***
-
-# Introduction
-
-***
-
-# Background 
-
-***
-
-# Descriptive analysis 
-
-***
-
-# Inferential analysis
+From our new model for the number of deaths per capita we can see that the R^2 correlation coefficient is not that much larger than that of our original model, even with the interaction effects. Again, this most likely indicates that for the number of deaths per capita the interaction between the three significant variables does not explain much more of its variation. \
+```{r}
+#REFITTED MODEL 2 WITH INTERACTION EFFECTS
+#deaths per capita vs our three factors of Retail and Recreation, Grocery & Pharmacy, and Parks
+refit_model2 = lm(data = country_data, deaths_per_capita_2020 ~ Retail_Rec_change +
+            Grocery_Pharm_change+
+            Parks_change+ Grocery_Pharm_change:Parks_change + Grocery_Pharm_change:Retail_Rec_change + Parks_change:Retail_Rec_change)
+anova(refit_model2)
+summary(refit_model2)
+```
 
 ***
 
 # Sensitivity analysis 
+
+## Diagnostics Model 1
+
+### Residuals vs Fitted
+
+Our first plot for model 1 is the residual vs fitted plot, which should have the data points having no pattern and are equally on both sides of the zero line. We can see that the residual values are not distributed randomly and are scattered in a clear nonlinear pattern around the zero line, so it is reasonable to say that the errors do not have equal variance and the relationship between the factors of our model and our response of the number of  COVID cases per capita is not linear.  We also have three outliers of 9, 5, and 88. \
+```{r}
+plot(model1,1)
+```
+\
+
+### Normal Q-Q Plot of Residuals
+
+Our second plot for model 1 is the Q-Q plot, which should have the data points look as close to linear as possible, in which case the error would be normal. In our plot we can see that the data points are very close to the trend line, so it looks approximately linear. However, there are also heavy tails which may indicate some variation in the data that prevents it from being more close to Normal. Additionally there are a few outliers in one tail end. It makes sense for the errors to be approximately normal in this case because the number of cases per capita is a very large population of people, and a large sample generally approximates to normal. Overall, it is reasonable to say that the errors are normally distributed, and so the assumption is met. \
+```{r}
+plot(model1,2)
+```
+\
+
+### Scale Location Plot
+
+Our third plot for model 1 is the scale-location plot, which should have the data points exhibit no visible pattern, and this will tell us whether the groups have constant variance. In our plot the data points are spread very unevenly above and below the red line at standardized residual value of between 0.5 and 0.1, and there is an obvious nonlinear pattern. Thus we can deduce that the variance is nonconstant, and the assumption is not met.\
+```{r}
+plot(model1,3)
+```
+
+### Residuals vs Leverage
+
+The fourth plot for model 1 is the residual-leverage plot, which should have no visible influential points or outliers in the upper right or lower right corner. In our plot there do not seem to be any influential points or outliers (other than 98 and 82, but they are inside the cook’s line and thus not as influential), as the data all lie within the Cook’s distance red dashed line. Therefore it is reasonable to say that there are no influential cases or outliers. \
+```{r}
+plot(model1,5)
+```
+
+## Diagnostics Model 2
+
+### Residuals vs Fitted
+
+Our first plot for model 2 is the residual vs fitted plot, which should have the data points having no pattern and are equally on both sides of the zero line. We can see that the residual values are not distributed randomly and are looking to be clearly nonlinear around the zero line, so it is reasonable to say that the errors do not have equal variance and the relationship between the factors of our model and our response of the number of COVID deaths per capita is definitely not linear. We also have three outliers of 16, 98, and 13.\
+\
+```{r}
+plot(model2,1) 
+```
+
+### Normal Q-Q Plot of Residuals
+
+Our second plot for model 2  is the Q-Q plot, which should have the data points look as close to linear as possible, in which case the error would be normal. In our plot we can see that the data points are not as close to the trend line, so it looks approximately linear, but it could be much closer to the trend line than it is. There are also very heavy tails which may indicate some variation in the data that prevents it from being more close to Normal. Additionally there are a few outliers in one tail end. From the plot we would have to make the model undergo more transformations to fit it normally, so we cannot say that the errors are normally distributed. It seems reasonable that the errors for number of deaths per capita may not be as close to normally distributed than for the models of the other response variables because the number of deaths could be underreported, there are no false positives for deaths, and the number of deaths is smaller than the number of cases of COVID-19, since not all people who contract the disease die. \
+```{r}
+plot(model2,2) 
+```
+
+### Scale Location Plot
+
+Our third plot for model 2  is the scale-location plot, which should have the data points exhibit no visible pattern, and this will tell us whether the groups have constant variance. In our plot the data points are spread very unevenly above and below the red line at standardized residual value of between 0.5 and 0.1, and there is an obvious nonlinear pattern. Thus we can deduce that the variance is nonconstant, and the assumption is not met. \
+```{r}
+plot(model2,3) 
+```
+
+### Residuals vs Leverage
+
+The fourth plot for model 2 is the residual-leverage plot, which should have no visible influential points or outliers in the upper right or lower right corner. In our plot there do not seem to be any influential points or outliers (other than 16,35, and 98, but they are inside the Cook’s line and thus not as influential), as the data all lie within the Cook’s distance red dashed line. Therefore it is reasonable to say that there are no influential cases or outliers. \
+```{r}
+plot(model2,5) 
+```
+
+## Diagnostics Model 3
+
+### Residuals vs Fitted
+
+Our first plot for model 3 is the residual vs fitted plot, which should have the data points having no pattern and are equally on both sides of the zero line. We can see that the residual values are not distributed randomly and are scattered in a clear pattern around a line close to the zero line, so it is reasonable to say that the errors do not have equal variance and the relationship between the factors of our model and our response of the case mortality rate is definitely not linear.  We also have three outliers of 68,69, and 113. \
+
+
+```{r}
+plot(model3,1) 
+```
+
+### Normal Q-Q Plot of Residuals
+
+Our second plot for model 3 is the Q-Q plot, which should have the data points look as close to linear as possible, in which case the error would be normal. In our plot we can see that the data points are close to the trend line, so it looks approximately linear,and the tails are relatively light with three outliers of 68,69, and 113. The errors are normally distributed, so the assumption is met. \
+
+```{r}
+plot(model3,2) 
+```
+
+### Scale Location Plot
+
+Our third plot for model 3 is the scale-location plot, which should have the data points exhibit no visible pattern, and this will tell us whether the groups have constant variance. In our plot the data points are spread somewhat evenly above and below the red line at standardized residual value of between 0.5 and 0.1, and there is a large cluster between 0.015 vs 0.025. Thus we can deduce that the variance is nonconstant, and the assumption is not met. \
+
+```{r}
+plot(model3,3) 
+```
+
+### Residuals vs Leverage
+
+The fourth plot for model 3 is the residual-leverage plot, which should have no visible influential points or outliers in the upper right or lower right corner. In our plot there is  definitely at least one influential point or outlier, which is 113.  The data do not all lie within the Cook’s distance red dashed line so the assumption is not met. \
+
+```{r}
+plot(model3,5) 
+```
+
+For the three original models for:
+(1) number of cases per capita vs the six predictor variables of Grocery and Pharmacy, Retail and Recreation, Parks, Residential, Transit stations, and Workplaces \
+(2) number of deaths per capita vs the six predictor variables of Grocery and Pharmacy, Retail and Recreation, Parks, Residential, Transit stations, and Workplaces \
+(3) case mortality vs the six predictor variables of Grocery and Pharmacy, Retail and Recreation, Parks, Residential, Transit stations, and Workplaces \
+
+we found that the assumptions for none of them were met. We may need to conduct more testing and model fitting to determine the best fitting model, but it is likely that the model is nonlinear given our diagnostic plot analysis, and the fact that when we refit the first two models with interaction effects, the difference in the $R^2$ value was not large (the third model was not refit as we found that none of the predictor variables could explain the variance in the case mortality rate). Another issue to consider is that because not a lot of the variation in the response variables of number of cases per capita, number of deaths per capita, and case mortality rate is explained by the aforementioned six predictor variables, there are many confounding variables that could be contributing to this variation which we cannot explain. 
 
 ***
 
@@ -270,13 +705,33 @@ Our primary question of interest is whether the amount of mobility (or mobility 
 # Acknowledgement {-}
 
 
-Zhang, Zitong
+Zhang, Zitong \
 
 ***
 
 # Reference {-}
 
+Argentina's violent enforcement of Covid-19 Rules. (2020, November 20). Retrieved March 05, 2021, from https://www.hrw.org/news/2020/11/20/argentinas-violent-enforcement-covid-19-rules \
 
+Badr, H. S., Du, H., Marshall, M., Dong, E., Squire, M. M., & Gardner, L. M. (2020). Association between mobility patterns and COVID-19 transmission in the USA: A mathematical modelling study. The Lancet Infectious Diseases, 20(11), 1247-1254. doi:10.1016/s1473-3099(20)30553-3 \
+
+Chang, S., Pierson, E., Koh, P. W., Gerardin, J., Redbird, B., Grusky, D., & Leskovec, J. (2020). Mobility network models of COVID-19 explain inequities and inform reopening. Nature, 589(7840), 82-87. doi:10.1038/s41586-020-2923-3 \
+
+Larsen, J. R., Martin, M. R., Martin, J. D., Kuhn, P., & Hicks, J. B. (2020). Modeling the Onset of Symptoms of COVID-19. Frontiers in Public Health, 8. doi:10.3389/fpubh.2020.00473 \
+
+Oran, D. P., & Topol, E. J. (2021). Prevalence of Asymptomatic SARS-CoV-2 Infection. Annals of Internal Medicine, 174(2), 286-287. doi:10.7326/l20-1285 \
+
+Nouvellet, P., Bhatia, S., Cori, A., Ainslie, K., Baguelin, M., Bhatt, S., . . . Donnelly, C. (2021,    February 17). Reduction in mobility and COVID-19 Transmission. Retrieved March 05, 2021, from https://www.nature.com/articles/s41467-021-21358-2#citeas \
+
+Praharaj, S., & Han, H. (2020). A longitudinal study of the impact of human mobility on the incidence of COVID-19 in India. doi:10.1101/2020.12.21.20248523 \
+
+Rezende, L. F., Thome, B., Schveitzer, M. C., Souza-Júnior, P. R., & Szwarcwald, C. L. (2020). Adults at high-risk of severe coronavirus disease-2019 (Covid-19) in Brazil. Revista De Saúde Pública, 54, 50. doi:10.11606/s1518-8787.2020054002596 \
+
+Zucchino, D., & Abed, F. (2020, December 20). 'Covid can't COMPETE.' in a Place mired in war, the virus is an afterthought. Retrieved March 05, 2021, from G. (n.d.). Community Mobility Reports. Retrieved March 5, 2021, from https://www.google.com/covid19/mobility/. \
+
+W. (n.d.). WHO COVID-19 Global Data. Retrieved March 5, 2021, from https://covid19.who.int/WHO-COVID-19-global-data.csv. \
+
+W. (n.d.). Population Total. Retrieved March 5, 2021, from https://data.worldbank.org/indicator/SP.POP.TOTL. \
 ***
 
 # Appendix {-}
@@ -286,5 +741,8 @@ Zhang, Zitong
 ***
 
 # Session info {-}
+```{r}
+sessionInfo()
+```
 
 
