@@ -1,7 +1,7 @@
 ---
 title: "Project 2: COVID Analysis"
 date: "`r Sys.Date()`"
-authors: "Victor Sandoval, Radhika Kulkarni, Brian Lan, Cory Takiguchi, Sean McGinty"
+authors: "Team 6: Victor Sandoval, Radhika Kulkarni, Brian Lan, Cory Takiguchi, Sean McGinty"
 output:
   html_document:
     code_folding: hide
@@ -85,7 +85,7 @@ covidmobility <- read_csv("~/Downloads/Global_Mobility_Report.csv") %>%
 covidWHO <- read_csv("https://covid19.who.int/WHO-COVID-19-global-data.csv") %>%
 	mutate(Date_reported = as.Date(Date_reported))
 
-world_pop = read_csv("~/Downloads/csvData.csv") %>%
+world_pop = read_csv("~/STA_141A_Project_2/World_Pop_Data.csv") %>%
 	mutate(Country = name)
 ```
 
@@ -132,7 +132,7 @@ covid_data = inner_join(covidmobility,covidWHO,by = c("Country_code","Date_repor
          Month = substr(Date_reported,6,7)) 
 ```
 
-## Summary Statistics by Country
+## Population Size and Mobility Data by Country
 
 ```{r}
 country_data = covid_data %>% group_by(Country) %>% na.omit() %>% dplyr::summarise(Number_Cases = max(Cumulative_cases),
@@ -149,7 +149,7 @@ country_data = covid_data %>% group_by(Country) %>% na.omit() %>% dplyr::summari
 country_data = inner_join(country_data, world_pop, by  = "Country" ) %>% 
   mutate(cases_per_capita_2020 = Number_Cases/pop2021,
          deaths_per_capita_2020 = Number_Deaths/pop2021)
-country_data
+country_data %>% select(-c(Number_Cases,Number_Deaths,case_mortality_rate))
 ```
 
 
@@ -698,7 +698,18 @@ we found that the assumptions for none of them were met. We may need to conduct 
 
 ***
 
-# Discussion 
+# Conclusion 
+
+	This report synthesized information from the WHO and Google Mobility Data to create a comprehensive analysis of mobility through six high risk categories and COVID-19 transmission (via number of deaths per capita, case mortality rate, and number of cases per capita). We wanted to understand whether these categories could have a significant effect on these relative measures of COVID 19 transmission, and if so, which categories were most significant. \
+\
+		The dataset from the WHO provided information on cumulative deaths and cases for 237 countries while the Google dataset provided information on mobility trends for 135 countries. Specifically, the google data contains the changes in mobility for Grocery and Pharmacy, Retail and Recreation, Parks, Residential, Transit stations, and Workplaces for each respective country. We conducted a descriptive  analysis which included summary statistics, graphs, and maps of mobility data case mortality rate, and cumulative deaths. \
+		Our inferential analysis included three models. Model 1 sought to find a relationship between the 6 distinct mobility variables and cases per capita using multiple regression. We concluded that at least one regression coefficient was not equal, namely, the mobility data of Retail and Recreation, Grocery and Pharmacy, and Parks make a difference in the number of cases per capita while Parks, Transit Stations, and Workplaces make no significant difference for the countries overall. Model 2 sought to find a relationship between the six distinct mobility variables and deaths per capita using multiple regression. We concluded that at least one regression coefficient was not equal, namely, the mobility data of Retail and Recreation, Grocery and Pharmacy, and Parks make a difference in the number of cases per capita while Parks, Transit Stations, and Workplaces make no significant difference in the countries overall. Model 3 sought to find a relationship between the 6 distinct mobility variables and case mortality rate using multiple regression. We concluded that there was no difference between the regression coefficients, so the mobility data of six predictor variables did not make a difference in the case mortality rate for the countries overall. Our secondary question of interest sought to answer which predictor variables were associated with the largest case mortality rate, the most number of cases per capita, and the most number of deaths per capita. We determined that Retail and Recreation, Grocery and Pharmacy, and Parks are the categories that are associated with the most number of cases per capita and number of deaths per capita, but there was no one category which was associated with the largest mortality rate. \
+\
+		Our Sensitivity analysis included a residuals vs fitted plot, a normal Q-Q plot of residuals, a scale location plot, and a residuals vs leverage plot for each model. Model 1 had diagnostics suggesting nonlinearity between factors and our response, normal distribution of errors, nonconstant variance, and non influential cases or outliers. Model 2 had diagnostics suggesting nonlinearity between factors and our response, non normal distribution of errors, nonconstant variance, and no influential cases or outliers. Model 3 had diagnostics suggesting nonlinearity between factors and our response, normal distribution of errors, nonconstant variance, and at least one influential case or outlier. \
+		\
+		Because COVID-19 is still a relatively unstudied area, there are many confounding factors which could influence the analysis. We noticed that the R^2 correlation coefficients did not explain most of the variation of the response for our models, even when we adjusted them for interaction effects. The data may follow a nonlinear relationship between the predictor variables and the response variables, and even if we fit them they may still not be able to explain a lot of the variation. It is difficult to explain even for advanced epidemiologists how people can prevent themselves from contracting COVID-19 when they need to go to certain places which could be characterized as high risk. As a result, there are many confounding factors that we may not be able to test for but which have a significant impact nonetheless. With more progressive  models and included nonlinearity in regression we can try to quantify more of the variation in the responses, but we would need more advanced techniques. \
+\
+		The results of our report could have major implications. For example, by knowing which changes in mobility result in the highest increase in deaths or cases, one could avoid high risk areas and potentially have a lower risk of exposure. This is particularly important knowledge for high-risk individuals who are deciding whether they should risk going to the supermarket or the local park for recreational activities. Knowing the risk factors beforehand could mean the difference between life or death. \
 
 ***
 
